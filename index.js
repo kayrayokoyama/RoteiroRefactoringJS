@@ -1,8 +1,6 @@
 const { readFileSync } = require('fs');
 
 function gerarFaturaStr (fatura, pecas) {
-    let totalFatura = 0;
-    let creditos = 0;
     let faturaStr = `Fatura ${fatura.cliente}\n`;
     
   
@@ -28,10 +26,10 @@ function gerarFaturaStr (fatura, pecas) {
     }
 
     // função extraída
-    function calcularTotalApresentacao(apre, peca) {
+    function calcularTotalApresentacao(apre) {
       let total = 0;
 
-      switch (peca.tipo) {
+      switch (getPeca(apre).tipo) {
       case "tragedia":
         total = 40000;
         if (apre.audiencia > 30) {
@@ -46,23 +44,33 @@ function gerarFaturaStr (fatura, pecas) {
         total += 300 * apre.audiencia;
         break;
       default:
-          throw new Error(`Peça desconhecia: ${peca.tipo}`);
+          throw new Error(`Peça desconhecia: ${getPeca(apre).tipo}`);
       }
       return total;
     } 
+
+    function calcularTotalFatura() {
+      let totalFatura = 0;
+      for (let apre of fatura.apresentacoes) {
+        totalFatura += calcularTotalApresentacao(apre);
+      }
+      return totalFatura;
+    }
+
+    function calcularTotalCreditos() {
+      let creditos = 0;
+      for (let apre of fatura.apresentacoes) {
+        creditos += calcularCredito(apre);
+      }
+      return creditos;
+    }
     
     for (let apre of fatura.apresentacoes) {
-      //const peca = getPeca(apre);
-      let total = calcularTotalApresentacao(apre, getPeca(apre));
-  
-      creditos += calcularCredito(apre);
-  
       // mais uma linha da fatura
-      faturaStr += `  ${getPeca(apre).nome}: ${formatarMoeda(total)} (${apre.audiencia} assentos)\n`;
-      totalFatura += total;
+      faturaStr += `  ${getPeca(apre).nome}: ${formatarMoeda(calcularTotalApresentacao(apre))} (${apre.audiencia} assentos)\n`;
     }
-    faturaStr += `Valor total: ${formatarMoeda(totalFatura)}\n`;
-    faturaStr += `Créditos acumulados: ${creditos} \n`;
+    faturaStr += `Valor total: ${formatarMoeda(calcularTotalFatura())}\n`;
+    faturaStr += `Créditos acumulados: ${calcularTotalCreditos()} \n`;
     return faturaStr;
   }
 
